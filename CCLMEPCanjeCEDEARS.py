@@ -6,15 +6,30 @@ import plotly.express as px
 # Load the CSV file
 df = pd.read_csv('CEDEARcsv.csv')
 
-# Fetch the latest data for each ticker from Yahoo Finance
-def fetch_latest_data(ticker):
-    stock = yf.Ticker(ticker)
-    hist = stock.history(period="1d")
-    if hist.empty:
-        return None, None
-    latest_data = hist['Close'].iloc[-1]
-    volume = hist['Volume'].iloc[-1]
-    return latest_data, volume
+def fetch_latest_data(tickers):
+    data = {}
+    for ticker in tickers:
+        stock = yf.Ticker(ticker)
+        hist = stock.history(period="1d")
+        
+        # Check if the DataFrame is empty
+        if not hist.empty:
+            volume = hist['Volume'].iloc[-1]
+            
+            # Exclude data with volume under 1
+            if volume >= 1:
+                data[ticker] = {
+                    "price": hist['Close'].iloc[-1],
+                    "volume": volume
+                }
+        else:
+            st.warning(f"No data found for {ticker}")
+    return data
+
+# Assuming get_required_tickers and other logic is already in place
+if st.button("Enter"):
+    tickers = get_required_tickers(option)
+    latest_data = fetch_latest_data(tickers)
 
 # Initialize empty dictionaries to store prices and volumes
 prices = {}
