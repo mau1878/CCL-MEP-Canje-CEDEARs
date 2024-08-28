@@ -7,23 +7,30 @@ import plotly.express as px
 df = pd.read_csv('CEDEARcsv.csv')
 
 # Fetch the latest data for each ticker from Yahoo Finance
-def fetch_latest_data(tickers):
-    data = yf.download(tickers, period='1d', interval='1m')
-    latest_data = data['Close'].iloc[-1]
-    volumes = data['Volume'].iloc[-1]
-    return latest_data, volumes
+def fetch_latest_data(ticker):
+    stock = yf.Ticker(ticker)
+    hist = stock.history(period="1d")
+    if hist.empty:
+        return None, None
+    latest_data = hist['Close'].iloc[-1]
+    volume = hist['Volume'].iloc[-1]
+    return latest_data, volume
 
 # Initialize empty dictionaries to store prices and volumes
 prices = {}
 volumes = {}
 
-# Fetch the latest price and volume data for all tickers
+# Fetch the latest price and volume data for all tickers, excluding those with no data
 for column in ["CEDEAR-ARS", "CEDEARD", "Subyacente"]:
     unique_tickers = df[column].unique()
     for ticker in unique_tickers:
         latest_price, latest_volume = fetch_latest_data(ticker)
-        prices[ticker] = latest_price
-        volumes[ticker] = latest_volume
+        if latest_price is not None and latest_volume is not None:
+            prices[ticker] = latest_price
+            volumes[ticker] = latest_volume
+
+# Ensure the DataFrame only includes rows with valid price data for all required tickers
+df = df[df['CEDEAR-ARS'].isin(prices.keys()) & df['CEDEARD'].isin(prices.keys()) & df['Subyacente'].isin(prices.keys())]
 
 # Calculate the X and Y values for the scatter plots
 df['X_CCL'] = df.apply(lambda row: (prices[row['CEDEAR-ARS']] * row['Ratio']) / prices[row['Subyacente']], axis=1)
