@@ -29,7 +29,7 @@ for column in ["CEDEAR-ARS", "CEDEARD", "Subyacente"]:
             prices[ticker] = latest_price
             volumes[ticker] = latest_volume
 
-# Ensure the DataFrame only includes rows with valid price data for all required tickers
+# Ensure the DataFrame only includes rows with valid price data and volume > 1 for all required tickers
 df = df[df['CEDEAR-ARS'].isin(prices.keys()) & df['CEDEARD'].isin(prices.keys()) & df['Subyacente'].isin(prices.keys())]
 
 # Calculate the X and Y values for the scatter plots
@@ -41,6 +41,9 @@ df['Y_MEP'] = df.apply(lambda row: prices[row['CEDEARD']] * volumes[row['CEDEARD
 
 df['X_Canje'] = df.apply(lambda row: (prices[row['CEDEARD']] * row['Ratio']) / prices[row['Subyacente']], axis=1)
 df['Y_Canje'] = df.apply(lambda row: prices[row['CEDEARD']] * volumes[row['CEDEARD']], axis=1)
+
+# Exclude rows where volume is less than 1
+df = df[(df['Y_CCL'] > 1) & (df['Y_MEP'] > 1) & (df['Y_Canje'] > 1)]
 
 # Function to remove outliers using IQR method
 def remove_outliers(df, x_column, y_column):
